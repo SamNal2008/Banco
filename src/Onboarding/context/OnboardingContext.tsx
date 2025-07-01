@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
 // Define the types for our onboarding state
 export type OnboardingStep = 'account-creation' | 'bank-selection';
@@ -52,66 +52,85 @@ const initialState: OnboardingState = {
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<OnboardingState>(initialState);
 
-  const setEmail = (email: string) => {
+  const setEmail = useCallback((email: string) => {
     setState((prev) => ({ ...prev, email }));
-  };
+  }, []);
 
-  const setPassword = (password: string) => {
+  const setPassword = useCallback((password: string) => {
     setState((prev) => ({ ...prev, password }));
-  };
+  }, []);
 
-  const setSelectedBank = (bank: BankConnection) => {
+  const setSelectedBank = useCallback((bank: BankConnection) => {
     setState((prev) => ({ ...prev, selectedBank: bank }));
-  };
+  }, []);
 
-  const nextStep = () => {
-    if (state.currentStep === 'account-creation') {
-      setState((prev) => ({ ...prev, currentStep: 'bank-selection' }));
-    }
-  };
+  const nextStep = useCallback(() => {
+    setState((prev) => {
+      if (prev.currentStep === 'account-creation') {
+        return { ...prev, currentStep: 'bank-selection' };
+      }
+      return prev;
+    });
+  }, []);
 
-  const prevStep = () => {
-    if (state.currentStep === 'bank-selection') {
-      setState((prev) => ({ ...prev, currentStep: 'account-creation' }));
-    }
-  };
+  const prevStep = useCallback(() => {
+    setState((prev) => {
+      if (prev.currentStep === 'bank-selection') {
+        return { ...prev, currentStep: 'account-creation' };
+      }
+      return prev;
+    });
+  }, []);
 
-  const goToStep = (step: OnboardingStep) => {
+  const goToStep = useCallback((step: OnboardingStep) => {
     setState((prev) => ({ ...prev, currentStep: step }));
-  };
+  }, []);
 
-  const setIsRedirecting = (isRedirecting: boolean) => {
+  const setIsRedirecting = useCallback((isRedirecting: boolean) => {
     setState((prev) => ({ ...prev, isRedirecting }));
-  };
+  }, []);
 
-  const setIsLoading = (isLoading: boolean) => {
+  const setIsLoading = useCallback((isLoading: boolean) => {
     setState((prev) => ({ ...prev, isLoading }));
-  };
+  }, []);
 
-  const setError = (error: string | null) => {
+  const setError = useCallback((error: string | null) => {
     setState((prev) => ({ ...prev, error }));
-  };
+  }, []);
 
-  const resetOnboarding = () => {
+  const resetOnboarding = useCallback(() => {
     setState(initialState);
-  };
+  }, []);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    state,
+    setEmail,
+    setPassword,
+    setSelectedBank,
+    nextStep,
+    prevStep,
+    goToStep,
+    setIsRedirecting,
+    setIsLoading,
+    setError,
+    resetOnboarding,
+  }), [
+    state,
+    setEmail,
+    setPassword,
+    setSelectedBank,
+    nextStep,
+    prevStep,
+    goToStep,
+    setIsRedirecting,
+    setIsLoading,
+    setError,
+    resetOnboarding,
+  ]);
 
   return (
-    <OnboardingContext.Provider
-      value={{
-        state,
-        setEmail,
-        setPassword,
-        setSelectedBank,
-        nextStep,
-        prevStep,
-        goToStep,
-        setIsRedirecting,
-        setIsLoading,
-        setError,
-        resetOnboarding,
-      }}
-    >
+    <OnboardingContext.Provider value={contextValue}>
       {children}
     </OnboardingContext.Provider>
   );

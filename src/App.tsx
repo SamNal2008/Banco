@@ -1,14 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Banknote, MessageCircle, Shield, ArrowRight, Mic, CreditCard } from 'lucide-react';
 import Onboarding from './Onboarding/Onboarding';
+import Login from './Login/Login';
+import Dashboard from './Dashboard/Dashboard';
+import { StorageService } from './services/StorageService';
 
 function App() {
-  // Utiliser une valeur initiale basée sur l'URL
-  const initialView = window.location.pathname.includes('onboarding') ||
-    new URLSearchParams(window.location.search).has('bridge_return') ?
-    'onboarding' : 'landing';
+  // Check if user is logged in and set initial view accordingly
+  const getInitialView = () => {
+    const isOnboarding = window.location.pathname.includes('onboarding') ||
+      new URLSearchParams(window.location.search).has('bridge_return');
+    const isLogin = window.location.pathname.includes('login');
+    const isDashboard = window.location.pathname.includes('dashboard');
+    
+    // If user is trying to access dashboard, check authentication
+    if (isDashboard && StorageService.isUserLoggedIn()) {
+      return 'dashboard';
+    }
+    
+    // If user is logged in but on landing/login page, redirect to dashboard
+    if ((window.location.pathname === '/' || isLogin) && StorageService.isUserLoggedIn()) {
+      window.history.pushState({}, '', '/dashboard');
+      return 'dashboard';
+    }
+    
+    if (isOnboarding) return 'onboarding';
+    if (isLogin) return 'login';
+    if (isDashboard) return 'dashboard';
+    return 'landing';
+  };
 
-  const [currentView, setCurrentView] = useState<'landing' | 'onboarding'>(initialView);
+  const [currentView, setCurrentView] = useState<'landing' | 'onboarding' | 'login' | 'dashboard'>(getInitialView());
 
   // Fonction pour gérer la navigation par lien
   const handleOnboardingNavigation = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -18,12 +40,31 @@ function App() {
     setCurrentView('onboarding');
   }, []);
 
+  // Fonction pour gérer la navigation vers la page de connexion
+  const handleLoginNavigation = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    console.log('Navigating to login view');
+    window.history.pushState({}, '', '/login');
+    setCurrentView('login');
+  }, []);
+
   // Gérer les changements d'URL
   useEffect(() => {
     const handlePopState = () => {
       const isOnboarding = window.location.pathname.includes('onboarding') ||
         new URLSearchParams(window.location.search).has('bridge_return');
-      setCurrentView(isOnboarding ? 'onboarding' : 'landing');
+      const isLogin = window.location.pathname.includes('login');
+      const isDashboard = window.location.pathname.includes('dashboard');
+      
+      if (isOnboarding) {
+        setCurrentView('onboarding');
+      } else if (isLogin) {
+        setCurrentView('login');
+      } else if (isDashboard) {
+        setCurrentView('dashboard');
+      } else {
+        setCurrentView('landing');
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -32,6 +73,18 @@ function App() {
 
   if (currentView === 'onboarding') {
     return <Onboarding />;
+  }
+  
+  if (currentView === 'login') {
+    return <Login />;
+  }
+
+  if (currentView === 'dashboard') {
+    return <Dashboard onLogout={() => {
+      StorageService.clearUserData();
+      window.history.pushState({}, '', '/');
+      setCurrentView('landing');
+    }} />;
   }
 
   return (
@@ -56,9 +109,9 @@ function App() {
               <span className="text-xl font-medium text-white">Banco</span>
             </a>
             <a
-              href="/onboarding"
+              href="/login"
               className="bg-white text-black px-6 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 font-medium hover:scale-105 inline-block text-center"
-              onClick={handleOnboardingNavigation}
+              onClick={handleLoginNavigation}
             >
               Se connecter
             </a>
@@ -84,9 +137,9 @@ function App() {
             <div className="animate-fade-in-up animation-delay-400">
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <a
-                  href="/onboarding"
+                  href="/login"
                   className="bg-white text-black px-8 py-4 rounded-xl font-medium text-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 flex items-center gap-3 group inline-block"
-                  onClick={handleOnboardingNavigation}
+                  onClick={handleLoginNavigation}
                 >
                   Commencer
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />

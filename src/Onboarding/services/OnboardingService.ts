@@ -28,14 +28,11 @@ export const OnboardingService = {
    * @returns Promise with linking session containing redirect URL
    */
   initiateOnboarding: async (userEmail: string, bankId: string): Promise<ApiResponse<LinkingSession>> => {
-    // Use a default test email if none is provided
-    const email = userEmail || 'test@example.com';
-
-    console.log('Calling initiateOnboarding with:', { email, bankId });
+    console.log('Calling initiateOnboarding with:', { userEmail, bankId });
 
     return wrapApiCall<LinkingSession>(() =>
       post<LinkingSession>(ONBOARDING_ENDPOINTS.INITIATE, {
-        userEmail: email,
+        userEmail,
         bankId
       }, { authenticated: false })
     );

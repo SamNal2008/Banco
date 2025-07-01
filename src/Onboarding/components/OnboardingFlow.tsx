@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useOnboarding } from '../context/OnboardingContext';
 import AccountCreationStep from './AccountCreationStep';
 import BankSelectionStep from './BankSelectionStep';
@@ -6,25 +6,47 @@ import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { isBridgeReturn, handleBridgeReturn } from '../utils/bridgeBanking';
 
 const OnboardingFlow = () => {
-  const { state, setSelectedBank, setIsRedirecting, setError } = useOnboarding();
+  const { state, setSelectedBank, setIsRedirecting, setError, goToStep } = useOnboarding();
+  
+  const handleDashboardRedirect = useCallback(() => {
+    window.location.href = '/dashboard';
+  }, []);
+  
+  // Lire les paramètres de l'URL pour initialiser l'étape correcte
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stepParam = urlParams.get('step');
+    
+    // Only update if the step in URL is different from current state
+    if (stepParam === 'bank-selection' && state.currentStep !== 'bank-selection') {
+      goToStep('bank-selection');
+    }
+  }, [goToStep, state.currentStep]);
   
   // Handle Bridge Banking return
   useEffect(() => {
-    if (isBridgeReturn()) {
-      const result = handleBridgeReturn();
-      
-      if (result.success && result.bankConnection) {
+    if (!isBridgeReturn()) return;
+    
+    const result = handleBridgeReturn();
+    
+    if (result.success && result.bankConnection) {
+      // Only update if the bank connection is different
+      if (!state.selectedBank || 
+          state.selectedBank.bankId !== result.bankConnection.bankId || 
+          state.selectedBank.connected !== true) {
         setSelectedBank({
           ...result.bankConnection,
           connected: true
         });
-      } else if (result.error) {
-        setError(result.error);
       }
-      
+    } else if (result.error) {
+      setError(result.error);
+    }
+    
+    if (state.isRedirecting) {
       setIsRedirecting(false);
     }
-  }, [setSelectedBank, setIsRedirecting, setError]);
+  }, [setSelectedBank, setIsRedirecting, setError, state.selectedBank, state.isRedirecting]);
 
   // Render the current step
   const renderStep = () => {
@@ -56,10 +78,7 @@ const OnboardingFlow = () => {
           </p>
           <button
             className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-100 transition-all duration-300 font-medium hover:scale-105"
-            onClick={() => {
-              // In a real app, this would redirect to the dashboard
-              window.location.href = '/dashboard';
-            }}
+            onClick={handleDashboardRedirect}
           >
             Accéder à mon tableau de bord
           </button>

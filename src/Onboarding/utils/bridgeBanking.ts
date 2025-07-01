@@ -1,6 +1,8 @@
 import { BankConnection } from '../context/OnboardingContext';
 import { OnboardingService, MockOnboardingService, LinkingSession } from '../services/OnboardingService';
 import { API_CONFIG } from '../../config/environment';
+import { LoginService } from '../../Login/services/LoginService';
+import { StorageService } from '../../services/StorageService';
 
 // Mock Bridge Banking integration
 // In a real implementation, this would interact with the Bridge Banking API
@@ -15,7 +17,11 @@ interface BridgeConfig {
 export const initiateBridgeConnection = async (bank: BankConnection, config: BridgeConfig): Promise<void> => {
   try {
     // Get user email from session storage or context
-    const userEmail = sessionStorage.getItem('userEmail') || '';
+    const userEmail = StorageService.getUserInfo()?.email;
+
+    if (!userEmail) {
+      throw new Error('No user email found in sessionStorage');
+    }
 
     // For debugging
     console.log('Initiating bridge connection with:', { bank, userEmail });

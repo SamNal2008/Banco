@@ -154,7 +154,23 @@ export const wrapApiCall = async <T>(
       data: response,
     };
   } catch (error) {
-    console.error('API call error:', error);
+    // Amélioration de la journalisation des erreurs
+    if (axios.isAxiosError(error)) {
+      console.error('API call error (Axios):', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
+    } else {
+      console.error('API call error (Non-Axios):', error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : error);
+    }
+    
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur de connexion au serveur',

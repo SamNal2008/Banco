@@ -9,18 +9,18 @@ const BankSelectionStep = () => {
   const { prevStep, setSelectedBank, setIsRedirecting, setError, state } = useOnboarding();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredBanks, setFilteredBanks] = useState<Bank[]>([]);
-  
+
   // Fetch banks using React Query
   const { data: banks = [], isLoading, error, refetch } = useBanks();
-  
+
   // Filter banks based on search term
   useEffect(() => {
     if (!banks.length) return;
-    
+
     if (searchTerm.trim() === '') {
       setFilteredBanks(banks);
     } else {
-      const filtered = banks.filter(bank => 
+      const filtered = banks.filter(bank =>
         bank.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBanks(filtered);
@@ -33,18 +33,18 @@ const BankSelectionStep = () => {
       bankName,
       connected: false
     };
-    
+
     setSelectedBank(selectedBank);
     setIsRedirecting(true);
     setError(null); // Clear any previous errors
-    
+
     try {
       // Store the user email in session storage for the onboarding initiation
       // In a real app, this would come from the authenticated user context
-      const email = state.email || 'test@example.com';
+      const email = state.email;
       console.log('Setting email in session storage:', email);
       sessionStorage.setItem('userEmail', email);
-      
+
       // Use the new onboarding initiation endpoint via the bridgeBanking utility
       console.log('Initiating bridge connection for bank:', { bankId, bankName });
       await initiateBridgeConnection(selectedBank, {
@@ -68,7 +68,7 @@ const BankSelectionStep = () => {
         <h2 className="text-3xl font-light text-white mb-2 tracking-tight">Connectez votre banque</h2>
         <p className="text-gray-400">Sélectionnez votre banque pour commencer l'agrégation</p>
       </div>
-      
+
       {/* Search Input */}
       <div className="relative mb-6">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -82,7 +82,7 @@ const BankSelectionStep = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
-      
+
       {/* Bridge Banking Info */}
       <div className="mb-6 p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
         <div className="flex items-start gap-3">
@@ -97,7 +97,7 @@ const BankSelectionStep = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Bank List */}
       <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 mb-6">
         {isLoading ? (
@@ -109,7 +109,7 @@ const BankSelectionStep = () => {
           <div className="text-center py-8">
             <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
             <p className="text-red-400">Impossible de récupérer la liste des banques</p>
-            <button 
+            <button
               onClick={() => refetch()}
               className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white text-sm transition-colors"
             >
@@ -138,7 +138,7 @@ const BankSelectionStep = () => {
           </div>
         )}
       </div>
-      
+
       {/* Navigation */}
       <div className="flex items-center justify-between pt-2">
         <button
